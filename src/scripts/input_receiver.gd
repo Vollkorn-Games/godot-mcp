@@ -427,7 +427,9 @@ func _handle_send_key(data: Dictionary) -> void:
 
 	# Send response before flushing — flush can trigger scene changes
 	_send_response({"ok": true, "type": "send_key", "key": key_str, "pressed": pressed})
-	get_viewport().push_input(event)
+	# Use parse_input_event so Input singleton tracks pressed state
+	# (push_input alone doesn't update Input.is_action_pressed)
+	Input.parse_input_event(event)
 	Input.flush_buffered_events()
 
 
@@ -754,6 +756,30 @@ func _handle_send_key_sequence(data: Dictionary) -> void:
 				# State snapshot: {"state": true}
 				var state := _collect_state()
 				states.append({"state": state, "index": keys_sent, "time": Time.get_ticks_msec()})
+			elif item.has("hold"):
+				# Hold key (press without release): {"hold": "ctrl"}
+				var hold_str: String = item.get("hold", "")
+				var hold_keycode := OS.find_keycode_from_string(hold_str)
+				if hold_keycode != KEY_NONE:
+					var ev := InputEventKey.new()
+					ev.keycode = hold_keycode
+					ev.physical_keycode = hold_keycode
+					ev.pressed = true
+					Input.parse_input_event(ev)
+					Input.flush_buffered_events()
+					await get_tree().process_frame
+			elif item.has("release"):
+				# Release a held key: {"release": "ctrl"}
+				var rel_str: String = item.get("release", "")
+				var rel_keycode := OS.find_keycode_from_string(rel_str)
+				if rel_keycode != KEY_NONE:
+					var ev := InputEventKey.new()
+					ev.keycode = rel_keycode
+					ev.physical_keycode = rel_keycode
+					ev.pressed = false
+					Input.parse_input_event(ev)
+					Input.flush_buffered_events()
+					await get_tree().process_frame
 		elif item is String:
 			var key_str: String = item
 			var keycode := OS.find_keycode_from_string(key_str)
@@ -768,7 +794,7 @@ func _handle_send_key_sequence(data: Dictionary) -> void:
 			press.keycode = keycode
 			press.physical_keycode = keycode
 			press.pressed = true
-			get_viewport().push_input(press)
+			Input.parse_input_event(press)
 			Input.flush_buffered_events()
 
 			# Wait a frame for the game to process the press
@@ -779,7 +805,7 @@ func _handle_send_key_sequence(data: Dictionary) -> void:
 			release.keycode = keycode
 			release.physical_keycode = keycode
 			release.pressed = false
-			get_viewport().push_input(release)
+			Input.parse_input_event(release)
 			Input.flush_buffered_events()
 
 			keys_sent += 1
@@ -847,7 +873,7 @@ func _handle_send_joypad_button(data: Dictionary) -> void:
 	event.pressure = 1.0 if pressed else 0.0
 
 	_send_response({"ok": true, "type": "send_joypad_button", "button": button_str, "pressed": pressed, "device": device})
-	get_viewport().push_input(event)
+	Input.parse_input_event(event)
 	Input.flush_buffered_events()
 
 
@@ -877,7 +903,7 @@ func _handle_send_joypad_motion(data: Dictionary) -> void:
 	event.axis_value = value
 
 	_send_response({"ok": true, "type": "send_joypad_motion", "axis": axis_str, "value": value, "device": device})
-	get_viewport().push_input(event)
+	Input.parse_input_event(event)
 	Input.flush_buffered_events()
 
 
