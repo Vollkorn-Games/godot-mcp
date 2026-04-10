@@ -166,6 +166,7 @@ export function filterGodotStderr(stderr: string): string {
     .filter(
       (line) =>
         !line.includes("RIDs of type") &&
+        !line.includes("RID allocations of type") &&
         !line.includes("ObjectDB instances leaked") &&
         !line.includes("resources still in use at exit") &&
         !line.includes("_free_rids") &&

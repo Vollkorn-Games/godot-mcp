@@ -6,3 +6,7 @@
 script = ExtResource("1")
 
 [node name="Child" type="Sprite2D" parent="."]
+
+[node name="Body" type="CharacterBody2D" parent="."]
+
+[node name="BodyCollision" type="CollisionShape2D" parent="Body"]
