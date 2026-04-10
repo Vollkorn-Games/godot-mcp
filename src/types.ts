@@ -19,6 +19,14 @@ export interface GodotServerConfig {
 
 export type OperationParams = Record<string, any>;
 
+export interface ToolAnnotations {
+  title?: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
 export interface ToolResponse {
   content: { type: string; text: string }[];
   isError?: boolean;

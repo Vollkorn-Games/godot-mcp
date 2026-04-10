@@ -128,7 +128,59 @@ const HANDLER_MAP: Record<string, HandlerFn> = {
 
   // Testing
   run_tests: testHandlers.handleRunTests,
+
+  // Meta
+  discover_tools: handleDiscoverTools,
 };
+
+function handleDiscoverTools(ctx: ServerContext, args: any) {
+  const tools = getActiveTools(ctx);
+  const category = args?.category as string | undefined;
+
+  if (category) {
+    const filtered = tools.filter((t) => t.category === category);
+    if (filtered.length === 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `No tools found in category "${category}". Available categories: ${[...new Set(tools.map((t) => t.category))].join(", ")}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    const summary = filtered.map(
+      (t) =>
+        `- **${t.name}**${t.readOnly ? " (read-only)" : ""}${t.destructive ? " (destructive)" : ""}: ${t.description}`,
+    );
+    return {
+      content: [
+        {
+          type: "text",
+          text: `## ${category} tools (${filtered.length})\n\n${summary.join("\n")}`,
+        },
+      ],
+    };
+  }
+
+  // No category — return category overview
+  const categories: Record<string, number> = {};
+  for (const tool of tools) {
+    categories[tool.category] = (categories[tool.category] ?? 0) + 1;
+  }
+  const lines = Object.entries(categories)
+    .sort(([, a], [, b]) => b - a)
+    .map(([cat, count]) => `- **${cat}**: ${count} tools`);
+  return {
+    content: [
+      {
+        type: "text",
+        text: `## Available tool categories (${tools.length} total)\n\n${lines.join("\n")}\n\nCall discover_tools with a category to see tool details.`,
+      },
+    ],
+  };
+}
 
 function getActiveTools(ctx: ServerContext): ToolDefinition[] {
   return TOOL_DEFINITIONS.filter((tool) => {
@@ -139,9 +191,29 @@ function getActiveTools(ctx: ServerContext): ToolDefinition[] {
   });
 }
 
+/** Convert internal ToolDefinition to MCP Tool format with annotations. */
+function toMcpTool(tool: ToolDefinition): Record<string, unknown> {
+  const mcpTool: Record<string, unknown> = {
+    name: tool.name,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    annotations: {
+      title: tool.name.replace(/_/g, " "),
+      readOnlyHint: tool.readOnly,
+      destructiveHint: tool.destructive ?? false,
+      idempotentHint: tool.readOnly,
+      openWorldHint: false,
+    },
+  };
+  if (tool.outputSchema) {
+    mcpTool.outputSchema = tool.outputSchema;
+  }
+  return mcpTool;
+}
+
 export function setupToolHandlers(server: Server, ctx: ServerContext): void {
   server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: getActiveTools(ctx),
+    tools: getActiveTools(ctx).map(toMcpTool),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
