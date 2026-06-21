@@ -61,9 +61,9 @@ func _init():
 # Deferred to _process so autoload singletons are registered by the SceneTree.
 # In _init(), the SceneTree hasn't finished initialization, so load() on scenes
 # with scripts referencing autoloads (e.g. GameState.score) would fail.
-func _process(_delta):
+func _process(_delta: float) -> bool:
     if _has_executed:
-        return
+        return false
     _has_executed = true
 
     var operation = _pending_operation
@@ -149,11 +149,14 @@ func _process(_delta):
             get_node_insights(params)
         "batch":
             batch_operations(params)
+        "install_asset":
+            install_asset(params)
         _:
             log_error("Unknown operation: " + operation)
             quit(1)
 
     quit()
+    return false
 
 
 func _execute_single(op_name: String, op_params: Dictionary) -> void:
@@ -215,6 +218,119 @@ func batch_operations(params: Dictionary) -> void:
         results.append({"index": i, "operation": op_name, "ok": true})
 
     print(JSON.stringify({"batch_results": results, "total": operations.size()}))
+
+
+func install_asset(params) -> void:
+    ## Extract a downloaded asset archive (zip) into the project. The archive is
+    ## fetched and integrity-checked by the MCP server; this op only unpacks it.
+    var zip_path: String = params.get("zip_path", "")
+    var subdirectory: String = params.get("subdirectory", "")
+    var strip_top_level: bool = params.get("strip_top_level", true)
+
+    if zip_path.is_empty():
+        log_error("Failed to install asset: no zip_path provided")
+        return
+
+    var reader := ZIPReader.new()
+    var open_err := reader.open(zip_path)
+    if open_err != OK:
+        log_error("Failed to install asset: cannot open archive '" + zip_path + "' (error " + str(open_err) + ")")
+        return
+
+    var entries := reader.get_files()
+    if entries.is_empty():
+        log_error("Failed to install asset: archive is empty")
+        reader.close()
+        return
+
+    # Asset Library zips wrap everything in a single "<repo>-<commit>/" folder;
+    # strip it so files land at the expected project-relative locations.
+    var common_root := ""
+    if strip_top_level:
+        common_root = _common_top_dir(entries)
+
+    # Lock the project root for zip-slip containment checks (no trailing slash).
+    var project_root := ProjectSettings.globalize_path("res://").simplify_path()
+
+    var target_prefix := "res://"
+    if not subdirectory.is_empty():
+        target_prefix = "res://" + subdirectory.trim_prefix("res://").trim_prefix("/")
+        if not target_prefix.ends_with("/"):
+            target_prefix += "/"
+
+    var installed: Array = []
+    var total_bytes := 0
+    var max_total_bytes := 1024 * 1024 * 1024  # 1 GiB extraction cap
+
+    for entry in entries:
+        if entry.ends_with("/"):
+            continue  # directory marker
+
+        var rel := entry
+        if strip_top_level and not common_root.is_empty():
+            rel = rel.trim_prefix(common_root + "/")
+        if rel.is_empty():
+            continue
+
+        # Reject traversal in the archive entry name itself.
+        if rel.begins_with("/") or rel.begins_with("..") or "/../" in rel or rel.contains("\\"):
+            log_error("ASSET_INSTALL_ERROR: unsafe archive entry '" + entry + "'")
+            reader.close()
+            return
+
+        var dest_res := target_prefix + rel
+        var dest_abs := ProjectSettings.globalize_path(dest_res).simplify_path()
+
+        # Zip-slip guard: the resolved destination must stay inside the project.
+        if not (dest_abs == project_root or dest_abs.begins_with(project_root + "/")):
+            log_error("ASSET_INSTALL_ERROR: entry escapes project: '" + entry + "'")
+            reader.close()
+            return
+
+        var bytes := reader.read_file(entry)
+        total_bytes += bytes.size()
+        if total_bytes > max_total_bytes:
+            log_error("ASSET_INSTALL_ERROR: archive exceeds extraction size cap")
+            reader.close()
+            return
+
+        var dest_dir := dest_res.get_base_dir()
+        if not dest_dir.is_empty():
+            var dir_abs := ProjectSettings.globalize_path(dest_dir)
+            if not DirAccess.dir_exists_absolute(dir_abs):
+                var mk := DirAccess.make_dir_recursive_absolute(dir_abs)
+                if mk != OK:
+                    log_error("Failed to install asset: cannot create directory '" + dest_dir + "'")
+                    reader.close()
+                    return
+
+        var f := FileAccess.open(dest_res, FileAccess.WRITE)
+        if f == null:
+            log_error("Failed to install asset: cannot write '" + dest_res + "' (error " + str(FileAccess.get_open_error()) + ")")
+            reader.close()
+            return
+        f.store_buffer(bytes)
+        f.close()
+        installed.append(rel)
+
+    reader.close()
+    print(JSON.stringify({"installed": installed, "count": installed.size(), "target": target_prefix, "ok": true}))
+
+
+# Returns the single top-level directory shared by every entry, or "" when the
+# entries don't share one common root (e.g. a file sits at the archive root).
+func _common_top_dir(entries: PackedStringArray) -> String:
+    var root := ""
+    for entry in entries:
+        var slash := entry.find("/")
+        if slash == -1:
+            return ""
+        var top := entry.substr(0, slash)
+        if root.is_empty():
+            root = top
+        elif root != top:
+            return ""
+    return root
 
 # Logging functions
 func log_debug(message):

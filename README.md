@@ -47,7 +47,7 @@ You (natural language) --> AI Assistant --> MCP Server --> Godot Engine
                            your request   add_node()     in .tscn file
 ```
 
-You talk to your AI assistant normally. When it needs to do something in Godot, it calls one of the 61 tools this server provides. **You don't write any code yourself** -- the AI handles that.
+You talk to your AI assistant normally. When it needs to do something in Godot, it calls one of the 75 tools this server provides. **You don't write any code yourself** -- the AI handles that.
 
 ## Quickstart
 
@@ -56,7 +56,7 @@ You talk to your AI assistant normally. When it needs to do something in Godot, 
 Before you start, make sure you have these installed:
 
 1. **Godot Engine 4.x** -- [Download here](https://godotengine.org/download). Install it and note the full path to the executable.
-   - Windows: e.g., `C:/Program Files (x86)/Godot/Godot_v4.4-stable_win64.exe`
+   - Windows: e.g., `C:/Program Files (x86)/Godot/Godot_v4.7-stable_win64.exe`
    - macOS: e.g., `/Applications/Godot.app/Contents/MacOS/Godot`
    - Linux: e.g., `/usr/local/bin/godot4`
 2. **Node.js 18+** -- [Download here](https://nodejs.org/). This runs the MCP server.
@@ -170,7 +170,7 @@ Check your client's documentation for where to add MCP server configs. Look for 
     "command": "node",
     "args": ["C:/Users/you/godot-mcp/build/index.js"],
     "env": {
-      "GODOT_PATH": "C:/Program Files (x86)/Godot/Godot_v4.4-stable_win64.exe"
+      "GODOT_PATH": "C:/Program Files (x86)/Godot/Godot_v4.7-stable_win64.exe"
     }
   }
 }
@@ -266,7 +266,7 @@ Ask Cline: _"Use the get_godot_version tool"_ -- if it returns a version, the fu
 
 This isn't just "launch editor and read logs". The MCP server can **build an entire game from scratch** -- create scenes, add and configure nodes, write GDScript files, wire up signals, set up tilemaps, then **run the game, play it via input commands, and observe the results through screenshots and state queries**.
 
-### 69 Tools Across 9 Categories
+### 75 Tools Across 10 Categories
 
 **Project & Editor**
 | Tool | Description |
@@ -372,6 +372,12 @@ This isn't just "launch editor and read logs". The MCP server can **build an ent
 | Tool | Description |
 |------|-------------|
 | `run_tests` | Run GUT unit tests headlessly and return pass/fail results |
+
+**Asset Library**
+| Tool | Description |
+|------|-------------|
+| `search_assets` | Search the Godot Asset Library for addons/templates (read-only network call) |
+| `install_asset` | Download an asset (by `assetId` or direct zip URL) and extract it into a project — sha256-verified and zip-slip-safe |
 
 ## Interactive Mode
 

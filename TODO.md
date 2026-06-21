@@ -149,3 +149,10 @@ Tools discovered during real game development (building a CSD-style task managem
 
 - [ ] **Multi-instance support** — Run multiple Godot processes with IDs (e.g., "server", "client1", "client2") for multiplayer testing. (Upstream [PR #56](https://github.com/Coding-Solo/godot-mcp/pull/56))
 - [ ] **Publish to NPM** — Make the fork installable via `npx` / `pnpm dlx`. (Upstream [#61](https://github.com/Coding-Solo/godot-mcp/issues/61))
+
+## Round 13 — Asset Library Integration
+
+The editor's Asset Store browser is just a client to a public REST API, so the search/download/install flow can be automated headlessly. (Targets the legacy Asset Library API, which is documented and scriptable; the new closed-beta Asset Store has no public API yet. The `libraryUrl` param keeps the source swappable.)
+
+- [x] **`search_assets`** — Search the Godot Asset Library REST API for addons/templates (read-only, network).
+- [x] **`install_asset`** — Download an asset by `assetId` (sha256-verified) or a direct zip URL and extract it into a project via Godot's `ZIPReader`. Strips the wrapping folder and rejects path-traversal (zip-slip) entries; enforces a download/extraction size cap.

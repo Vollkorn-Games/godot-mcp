@@ -28,6 +28,12 @@ export const PARAMETER_MAPPINGS: Record<string, string> = {
   collision_layer: "collisionLayer",
   collision_mask: "collisionMask",
   wait_frames: "waitFrames",
+  asset_id: "assetId",
+  download_url: "downloadUrl",
+  library_url: "libraryUrl",
+  strip_top_level: "stripTopLevel",
+  godot_version: "godotVersion",
+  max_results: "maxResults",
 };
 
 export const REVERSE_PARAMETER_MAPPINGS: Record<string, string> = {};

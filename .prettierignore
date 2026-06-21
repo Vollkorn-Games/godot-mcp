@@ -1,6 +1,8 @@
 build
 node_modules
 .claude
+.agents
 pnpm-lock.yaml
+skills-lock.json
 *.gd
 test/fixture
