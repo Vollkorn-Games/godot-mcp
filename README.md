@@ -56,7 +56,7 @@ You talk to your AI assistant normally. When it needs to do something in Godot, 
 Before you start, make sure you have these installed:
 
 1. **Godot Engine 4.x** -- [Download here](https://godotengine.org/download). Install it and note the full path to the executable.
-   - Windows: e.g., `C:/Program Files (x86)/Godot/Godot_v4.4-stable_win64.exe`
+   - Windows: e.g., `C:/Program Files (x86)/Godot/Godot_v4.7-stable_win64.exe`
    - macOS: e.g., `/Applications/Godot.app/Contents/MacOS/Godot`
    - Linux: e.g., `/usr/local/bin/godot4`
 2. **Node.js 18+** -- [Download here](https://nodejs.org/). This runs the MCP server.
@@ -170,7 +170,7 @@ Check your client's documentation for where to add MCP server configs. Look for 
     "command": "node",
     "args": ["C:/Users/you/godot-mcp/build/index.js"],
     "env": {
-      "GODOT_PATH": "C:/Program Files (x86)/Godot/Godot_v4.4-stable_win64.exe"
+      "GODOT_PATH": "C:/Program Files (x86)/Godot/Godot_v4.7-stable_win64.exe"
     }
   }
 }

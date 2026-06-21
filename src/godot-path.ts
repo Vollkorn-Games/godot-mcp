@@ -8,8 +8,8 @@ import { logDebug } from "./utils.js";
 const execFileAsync = promisify(execFile);
 
 /**
- * Match files like Godot_v4.6-stable_linux.x86_64, Godot_v4.2.1-stable_linux.x86_64,
- * Godot_v4.4-stable_mono_linux.x86_64, godot-4.6.0-linux, etc.
+ * Match files like Godot_v4.7-stable_linux.x86_64, Godot_v4.2.1-stable_linux.x86_64,
+ * Godot_v4.4-stable_mono_linux.x86_64, godot-4.7.0-linux, etc.
  *
  * Users who download Godot from godotengine.org and unzip into a Documents
  * or Downloads folder end up with a filename like this — none of the

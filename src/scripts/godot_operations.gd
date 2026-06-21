@@ -61,9 +61,9 @@ func _init():
 # Deferred to _process so autoload singletons are registered by the SceneTree.
 # In _init(), the SceneTree hasn't finished initialization, so load() on scenes
 # with scripts referencing autoloads (e.g. GameState.score) would fail.
-func _process(_delta):
+func _process(_delta: float) -> bool:
     if _has_executed:
-        return
+        return false
     _has_executed = true
 
     var operation = _pending_operation
@@ -154,6 +154,7 @@ func _process(_delta):
             quit(1)
 
     quit()
+    return false
 
 
 func _execute_single(op_name: String, op_params: Dictionary) -> void:
