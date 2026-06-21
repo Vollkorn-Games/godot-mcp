@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "godot": {
+      "source": "saschb2b/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/godot/SKILL.md",
+      "computedHash": "310fb8660097638505610bed079aa627d7b8bcf8a961efb32b95c193827b2330"
+    },
+    "scaffold-mcp": {
+      "source": "saschb2b/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/scaffold-mcp/SKILL.md",
+      "computedHash": "235c75eca5f41d73d70e80096daa78918571f632bd7630f74d54f67d7953bfbd"
+    }
+  }
+}
