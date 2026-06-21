@@ -7,11 +7,17 @@
       "skillPath": "skills/engineering/godot/SKILL.md",
       "computedHash": "310fb8660097638505610bed079aa627d7b8bcf8a961efb32b95c193827b2330"
     },
-    "scaffold-mcp": {
+    "mcp-server": {
       "source": "saschb2b/skills",
       "sourceType": "github",
-      "skillPath": "skills/engineering/scaffold-mcp/SKILL.md",
-      "computedHash": "235c75eca5f41d73d70e80096daa78918571f632bd7630f74d54f67d7953bfbd"
+      "skillPath": "skills/engineering/mcp-server/SKILL.md",
+      "computedHash": "66c9c91db6fa413b3f4642dc98d53926654c9210ab55c318a46c9d7f63288e6b"
+    },
+    "okf": {
+      "source": "saschb2b/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/okf/SKILL.md",
+      "computedHash": "e4fe6f87089c2c252e406364f36b536a2a53084f438f298af3cd8789855de162"
     }
   }
 }

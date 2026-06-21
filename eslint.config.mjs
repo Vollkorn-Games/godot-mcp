@@ -46,7 +46,15 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ["node_modules/**", "build/**", "test/fixture/**"],
+    // Vendored agent-skill content (tracked but not part of the TS project) and
+    // the test fixture project are not linted.
+    ignores: [
+      "node_modules/**",
+      "build/**",
+      "test/fixture/**",
+      ".claude/**",
+      ".agents/**",
+    ],
   },
 ];
 
