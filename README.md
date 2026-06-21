@@ -47,7 +47,7 @@ You (natural language) --> AI Assistant --> MCP Server --> Godot Engine
                            your request   add_node()     in .tscn file
 ```
 
-You talk to your AI assistant normally. When it needs to do something in Godot, it calls one of the 61 tools this server provides. **You don't write any code yourself** -- the AI handles that.
+You talk to your AI assistant normally. When it needs to do something in Godot, it calls one of the 75 tools this server provides. **You don't write any code yourself** -- the AI handles that.
 
 ## Quickstart
 
@@ -266,7 +266,7 @@ Ask Cline: _"Use the get_godot_version tool"_ -- if it returns a version, the fu
 
 This isn't just "launch editor and read logs". The MCP server can **build an entire game from scratch** -- create scenes, add and configure nodes, write GDScript files, wire up signals, set up tilemaps, then **run the game, play it via input commands, and observe the results through screenshots and state queries**.
 
-### 69 Tools Across 9 Categories
+### 75 Tools Across 10 Categories
 
 **Project & Editor**
 | Tool | Description |
@@ -372,6 +372,12 @@ This isn't just "launch editor and read logs". The MCP server can **build an ent
 | Tool | Description |
 |------|-------------|
 | `run_tests` | Run GUT unit tests headlessly and return pass/fail results |
+
+**Asset Library**
+| Tool | Description |
+|------|-------------|
+| `search_assets` | Search the Godot Asset Library for addons/templates (read-only network call) |
+| `install_asset` | Download an asset (by `assetId` or direct zip URL) and extract it into a project — sha256-verified and zip-slip-safe |
 
 ## Interactive Mode
 

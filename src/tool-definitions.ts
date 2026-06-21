@@ -6,6 +6,8 @@ export interface ToolDefinition {
   destructive?: boolean;
   /** Tool produces the same result when called repeatedly with the same arguments. */
   idempotent?: boolean;
+  /** Tool interacts with external entities over the network (e.g. the Asset Library). */
+  openWorld?: boolean;
   description: string;
   inputSchema: Record<string, unknown>;
   outputSchema?: Record<string, unknown>;
@@ -2057,11 +2059,115 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "search_assets",
+    category: "assets",
+    readOnly: true,
+    openWorld: true,
+    description:
+      "Search the Godot Asset Library for addons and project templates. Returns matching assets with the asset_id you pass to install_asset. Read-only network call to the public Asset Library REST API.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Free-text search filter (matches the asset title).",
+        },
+        type: {
+          type: "string",
+          enum: ["any", "addon", "project"],
+          description:
+            "Asset kind: 'addon' (plugin for an existing project) or 'project' (standalone template). Default: any.",
+        },
+        godotVersion: {
+          type: "string",
+          description:
+            "Only return assets compatible with this Godot version, e.g. '4.7'.",
+        },
+        category: {
+          type: "integer",
+          description: "Asset Library category id to filter by.",
+        },
+        support: {
+          type: "string",
+          enum: ["official", "featured", "community", "testing"],
+          description: "Filter by support/trust level.",
+        },
+        sort: {
+          type: "string",
+          enum: ["rating", "cost", "name", "updated"],
+          description: "Sort order. Default: updated.",
+        },
+        maxResults: {
+          type: "integer",
+          description: "Maximum results to return (1-100). Default: 20.",
+        },
+        page: {
+          type: "integer",
+          description: "Zero-based result page for pagination. Default: 0.",
+        },
+        libraryUrl: {
+          type: "string",
+          description:
+            "Override the Asset Library API base URL (default https://godotengine.org/asset-library/api, or the GODOT_ASSET_LIBRARY_URL env var).",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "install_asset",
+    category: "assets",
+    readOnly: false,
+    openWorld: true,
+    description:
+      "Download an asset from the Godot Asset Library and extract it into a project. Provide assetId (download URL and sha256 are resolved and verified via the Asset Library) or a direct downloadUrl. The archive's single wrapping folder is stripped by default so addons land under res://addons/. Files are written into the project (existing files at the same path are overwritten) and imported the next time the project is opened or run. Archive entries that would escape the project directory are rejected.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectPath: {
+          type: "string",
+          description: "Path to the Godot project directory.",
+        },
+        assetId: {
+          type: "string",
+          description:
+            "Asset Library asset id (from search_assets). The download URL and hash are looked up automatically.",
+        },
+        downloadUrl: {
+          type: "string",
+          description:
+            "Direct URL to a .zip archive, used instead of assetId. No hash verification is performed for arbitrary URLs.",
+        },
+        subdirectory: {
+          type: "string",
+          description:
+            "Project-relative directory to extract into (e.g. 'addons'). Default: project root.",
+        },
+        stripTopLevel: {
+          type: "boolean",
+          description:
+            "Strip the archive's single wrapping folder. Default: true.",
+        },
+        verifyHash: {
+          type: "boolean",
+          description:
+            "Verify the download against the Asset Library's sha256 hash (only when using assetId). Default: true.",
+        },
+        libraryUrl: {
+          type: "string",
+          description:
+            "Override the Asset Library API base URL used to resolve assetId.",
+        },
+      },
+      required: ["projectPath"],
+    },
+  },
+  {
     name: "discover_tools",
     category: "meta",
     readOnly: true,
     description:
-      "List available tools by category. Categories: process, project, scene, node, animation, tilemap, resource, script, signal_group, uid, settings, interactive, screenshot, analysis, testing, meta.",
+      "List available tools by category. Categories: process, project, scene, node, animation, tilemap, resource, script, signal_group, uid, settings, interactive, screenshot, analysis, testing, assets, meta.",
     inputSchema: {
       type: "object",
       properties: {

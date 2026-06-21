@@ -23,6 +23,7 @@ import * as interactiveHandlers from "./handlers/interactive-handlers.js";
 import * as screenshotHandlers from "./handlers/screenshot-handlers.js";
 import * as analysisHandlers from "./handlers/analysis-handlers.js";
 import * as testHandlers from "./handlers/test-handlers.js";
+import * as assetHandlers from "./handlers/asset-handlers.js";
 
 type HandlerFn = (ctx: ServerContext, args: any) => any;
 
@@ -129,6 +130,10 @@ const HANDLER_MAP: Record<string, HandlerFn> = {
   // Testing
   run_tests: testHandlers.handleRunTests,
 
+  // Asset Library
+  search_assets: assetHandlers.handleSearchAssets,
+  install_asset: assetHandlers.handleInstallAsset,
+
   // Meta
   discover_tools: handleDiscoverTools,
 };
@@ -201,8 +206,8 @@ function toMcpTool(tool: ToolDefinition): Record<string, unknown> {
       title: tool.name.replace(/_/g, " "),
       readOnlyHint: tool.readOnly,
       destructiveHint: tool.destructive ?? false,
-      idempotentHint: tool.readOnly,
-      openWorldHint: false,
+      idempotentHint: tool.idempotent ?? tool.readOnly,
+      openWorldHint: tool.openWorld ?? false,
     },
   };
   if (tool.outputSchema) {
