@@ -298,6 +298,18 @@ describe("Interactive handlers", () => {
       assertError(res);
       expect(res.content[0]!.text).toContain("run_interactive");
     });
+
+    it("errors when no game is running (with action items)", async () => {
+      const res = await handleSendKeySequence(ctx, {
+        keys: [
+          { action: "test_action" },
+          { action: "test_action", hold_ms: 100 },
+          { action: "test_action", holdMs: 100 },
+        ],
+      });
+      assertError(res);
+      expect(res.content[0]!.text).toContain("run_interactive");
+    });
   });
 
   describe("send_joypad_button", () => {

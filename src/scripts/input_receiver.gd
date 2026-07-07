@@ -22,7 +22,7 @@ extends Node
 #   {"type": "get_performance_metrics"}
 #   {"type": "reset_scene"}
 #   {"type": "get_runtime_errors", "clear": true}
-#   {"type": "send_key_sequence", "keys": ["a", {"screenshot": "path.png"}, "b", {"wait": 500}, {"state": true}, "c"], "delay_ms": 50, "collect_signals": [{"node_path": "/root/EventBus", "signals": ["task_completed"]}]}
+#   {"type": "send_key_sequence", "keys": ["a", {"action": "jump"}, {"action": "move_right", "hold_ms": 300}, {"screenshot": "path.png"}, "b", {"wait": 500}, {"state": true}, "c"], "delay_ms": 50, "collect_signals": [{"node_path": "/root/EventBus", "signals": ["task_completed"]}]}
 #   {"type": "pause_game", "paused": true}
 #   {"type": "set_property", "node_path": "Player", "property": "health", "value": 100}
 #   {"type": "execute_script", "code": "var p = $Player\nreturn p.position"}
@@ -780,6 +780,34 @@ func _handle_send_key_sequence(data: Dictionary) -> void:
 					Input.parse_input_event(ev)
 					Input.flush_buffered_events()
 					await get_tree().process_frame
+			elif item.has("action"):
+				# InputMap action: {"action": "move_up"} or {"action": "move_up", "hold_ms": 300}
+				var action_name: String = item.get("action", "")
+				if action_name.is_empty():
+					continue
+				var press_ev := InputEventAction.new()
+				press_ev.action = action_name
+				press_ev.pressed = true
+				get_viewport().push_input(press_ev)
+				Input.action_press(action_name, item.get("strength", 1.0))
+				Input.flush_buffered_events()
+				await get_tree().process_frame
+
+				var hold_ms: int = int(item.get("hold_ms", 0))
+				if hold_ms > 0:
+					await get_tree().create_timer(hold_ms / 1000.0).timeout
+
+				var release_ev := InputEventAction.new()
+				release_ev.action = action_name
+				release_ev.pressed = false
+				get_viewport().push_input(release_ev)
+				Input.action_release(action_name)
+				Input.flush_buffered_events()
+				await get_tree().process_frame
+
+				keys_sent += 1
+				if default_delay_ms > 0:
+					await get_tree().create_timer(default_delay_ms / 1000.0).timeout
 		elif item is String:
 			var key_str: String = item
 			var keycode := OS.find_keycode_from_string(key_str)

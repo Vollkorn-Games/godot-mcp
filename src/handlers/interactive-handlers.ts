@@ -144,7 +144,11 @@ export async function handleRunInteractive(
     content: [
       {
         type: "text",
-        text: `Game started in interactive mode with input receiver.\nUse send_input to send actions, game_state to check state, game_screenshot for live screenshots.\nStop with stop_project.`,
+        text:
+          `Game started in interactive mode with input receiver.\n` +
+          `Fast test loop: send_key_sequence batches keys and InputMap actions with inline {"wait"}, {"state"}, {"screenshot"} checkpoints in one call — no shell sleeps or per-input round-trips needed.\n` +
+          `Verify with game_state, evaluate_expression, or get_runtime_errors (fast, structured). Use game_screenshot only when visual appearance itself must be checked.\n` +
+          `Stop with stop_project.`,
       },
     ],
   };
@@ -599,25 +603,37 @@ export async function handleSendKeySequence(
 ): Promise<ToolResponse> {
   if (!args?.keys || !Array.isArray(args.keys)) {
     return createErrorResponse("Missing required parameter: keys", [
-      'Provide an array of key names and/or wait objects (e.g., ["a", "b", {"wait": 500}])',
+      'Provide an array of key names, action objects, and/or wait objects (e.g., ["a", {"action": "jump"}, {"wait": 500}])',
     ]);
   }
 
   try {
+    const delayMs = Number(args.delayMs ?? args.delay_ms ?? 50);
+
+    // Normalize action items: accept both holdMs and hold_ms
+    const keys = args.keys.map((k: unknown) => {
+      if (typeof k === "object" && k !== null && "action" in k) {
+        const item = k as Record<string, unknown>;
+        const holdMs = item.hold_ms ?? item.holdMs;
+        return holdMs !== undefined ? { ...item, hold_ms: holdMs } : item;
+      }
+      return k;
+    });
+
     // Estimate timeout from sequence content
-    const estimatedMs = args.keys.reduce((acc: number, k: unknown) => {
+    const estimatedMs = keys.reduce((acc: number, k: unknown) => {
       if (typeof k === "object" && k !== null) {
         if ("wait" in k) return acc + (k as { wait: number }).wait;
         if ("screenshot" in k) return acc + 500; // screenshot takes ~500ms
         if ("state" in k) return acc + 50; // state snapshot is fast
+        if ("action" in k)
+          return acc + ((k as { hold_ms?: number }).hold_ms ?? 0) + delayMs;
       }
-      return acc + Number(args.delayMs ?? args.delay_ms ?? 50);
+      return acc + delayMs;
     }, 0);
-
-    const delayMs = Number(args.delayMs ?? args.delay_ms ?? 50);
     const command: Record<string, unknown> = {
       type: "send_key_sequence",
-      keys: args.keys,
+      keys,
       delay_ms: delayMs,
     };
 

@@ -1336,7 +1336,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     category: "interactive",
     readOnly: false,
     description:
-      "Send a Godot InputMap action (e.g., 'move_up', 'jump') to a running interactive project. For raw keyboard keys, use send_key or send_key_sequence. Requires run_interactive.",
+      "Send a single Godot InputMap action (e.g., 'move_up', 'jump') to a running interactive project. Returns delivery confirmation only, not the effect — for multi-step testing prefer send_key_sequence with {\"action\": ...} items, which batches inputs, waits, and state/screenshot checkpoints into one round-trip (no shell sleeps needed). Requires run_interactive.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1376,7 +1376,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     category: "interactive",
     readOnly: false,
     description:
-      "Run a Godot project with MCP input receiver injected. Enables send_input, screenshots, and state queries via TCP. Use instead of run_project for interactive testing.",
+      "Run a Godot project with MCP input receiver injected. Enables send_key_sequence (batched inputs + checkpoints), game_state, get_runtime_errors, and screenshots via TCP. Use instead of run_project for interactive testing.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1397,7 +1397,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     category: "interactive",
     readOnly: true,
     description:
-      'Get current game state (health, score, position, etc.) from autoloads. For inline state captures during input, use send_key_sequence with {"state": true}. Requires run_interactive.',
+      'Fast structured verification (preferred over game_screenshot for gameplay logic): returns current scene name, script variables of all autoload singletons, and Player position if a Player node exists. For state not exposed via autoloads, use evaluate_expression or get_node_properties. For inline state captures during input, use send_key_sequence with {"state": true}. Requires run_interactive.',
     inputSchema: {
       type: "object",
       properties: {},
@@ -1479,7 +1479,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     category: "interactive",
     readOnly: true,
     description:
-      'Capture a screenshot from a running interactive project showing live game state. For inline captures during input, use send_key_sequence with {"screenshot": "path"}. Requires run_interactive.',
+      'Capture a screenshot from a running interactive project. Slowest verification path — use only when visual appearance itself matters (rendering, layout, animation). For gameplay/logic checks prefer game_state, evaluate_expression, or get_runtime_errors: structured, and much faster than writing and reading an image. For inline captures during input, use send_key_sequence with {"screenshot": "path"}. Requires run_interactive.',
     inputSchema: {
       type: "object",
       properties: {
@@ -1826,14 +1826,14 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     category: "interactive",
     readOnly: false,
     description:
-      'Primary gameplay testing tool. Sends multiple keys in one round-trip with inline checkpoints: collectSignals for signal events, {"state": true} for state snapshots, {"screenshot": "path"} for captures. Requires run_interactive.',
+      'Primary gameplay testing tool. Sends multiple raw keys and/or InputMap actions in one round-trip with inline checkpoints: {"wait": ms} delays, {"state": true} state snapshots, {"screenshot": "path"} captures, collectSignals for signal events. Replaces send_input/send_key loops with shell sleeps and separate verification calls. Requires run_interactive.',
     inputSchema: {
       type: "object",
       properties: {
         keys: {
           type: "array",
           description:
-            'Array of key names or control objects. Strings are key names (e.g., "a", "enter", "space"). Objects: {"wait": 500} inserts a delay in ms, {"screenshot": "/path/to/file.png"} captures a screenshot at that point, {"state": true} captures a game state snapshot. Example: ["1", "a", {"state": true}, "o", {"wait": 2000}, {"screenshot": "/tmp/mid.png"}, "s"]',
+            'Array of key names or control objects. Strings are key names (e.g., "a", "enter", "space"). Objects: {"action": "move_up"} sends an InputMap action (press+release; add "hold_ms": 300 to hold it, "strength" for analog), {"hold": "shift"}/{"release": "shift"} hold/release a raw key, {"wait": 500} inserts a delay in ms, {"screenshot": "/path/to/file.png"} captures a screenshot at that point, {"state": true} captures a game state snapshot. Example: [{"action": "jump"}, {"action": "move_right", "hold_ms": 500}, {"state": true}, {"wait": 1000}, {"screenshot": "/tmp/mid.png"}]',
           items: {},
         },
         delayMs: {
