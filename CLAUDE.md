@@ -35,7 +35,7 @@ Do not commit code that fails any of these checks. CI runs all five on every pus
 - `src/context.ts` — `ServerContext` class holding runtime state
 - `src/utils.ts` — Shared utilities (normalizeParameters, validatePath, killProcess, etc.)
 - `src/tcp-client.ts` — TCP connection to interactive Godot sessions
-- `src/index.ts` — Entry point, uses low-level `Server` API (not `McpServer`)
+- `src/index.ts` — Entry point. MCP SDK v2 (`@modelcontextprotocol/server`), low-level `Server` API (not `McpServer`), served via `serveStdio()` — speaks stateless MCP `2026-07-28` to modern clients and falls back to the legacy `initialize` handshake for 2025-era clients
 
 ## Testing
 

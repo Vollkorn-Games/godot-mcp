@@ -1,10 +1,5 @@
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import {
-  CallToolRequestSchema,
-  ErrorCode,
-  ListToolsRequestSchema,
-  McpError,
-} from "@modelcontextprotocol/sdk/types.js";
+import { ProtocolError, ProtocolErrorCode } from "@modelcontextprotocol/server";
+import type { Server, Tool } from "@modelcontextprotocol/server";
 import type { ServerContext } from "./context.js";
 import { logDebug } from "./utils.js";
 import { TOOL_DEFINITIONS, type ToolDefinition } from "./tool-definitions.js";
@@ -197,11 +192,11 @@ function getActiveTools(ctx: ServerContext): ToolDefinition[] {
 }
 
 /** Convert internal ToolDefinition to MCP Tool format with annotations. */
-function toMcpTool(tool: ToolDefinition): Record<string, unknown> {
-  const mcpTool: Record<string, unknown> = {
+function toMcpTool(tool: ToolDefinition): Tool {
+  const mcpTool: Tool = {
     name: tool.name,
     description: tool.description,
-    inputSchema: tool.inputSchema,
+    inputSchema: tool.inputSchema as Tool["inputSchema"],
     annotations: {
       title: tool.name.replace(/_/g, " "),
       readOnlyHint: tool.readOnly,
@@ -211,30 +206,33 @@ function toMcpTool(tool: ToolDefinition): Record<string, unknown> {
     },
   };
   if (tool.outputSchema) {
-    mcpTool.outputSchema = tool.outputSchema;
+    mcpTool.outputSchema = tool.outputSchema as Tool["outputSchema"];
   }
   return mcpTool;
 }
 
 export function setupToolHandlers(server: Server, ctx: ServerContext): void {
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
+  server.setRequestHandler("tools/list", () => ({
     tools: getActiveTools(ctx).map(toMcpTool),
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler("tools/call", async (request) => {
     const toolName = request.params.name;
     logDebug(ctx.debugMode, `Handling tool request: ${toolName}`);
 
     const handler = HANDLER_MAP[toolName];
     if (!handler) {
-      throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${toolName}`);
+      throw new ProtocolError(
+        ProtocolErrorCode.MethodNotFound,
+        `Unknown tool: ${toolName}`,
+      );
     }
 
     // Verify the tool passes filtering (not excluded/read-only/toolset-filtered)
     const activeTool = getActiveTools(ctx).find((t) => t.name === toolName);
     if (!activeTool) {
-      throw new McpError(
-        ErrorCode.MethodNotFound,
+      throw new ProtocolError(
+        ProtocolErrorCode.MethodNotFound,
         `Tool "${toolName}" is not available with current configuration`,
       );
     }

@@ -9,10 +9,8 @@
 
 import { fileURLToPath } from "url";
 import { join, dirname, normalize } from "path";
-
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { Server } from "@modelcontextprotocol/server";
 import type { GodotServerConfig } from "./types.js";
 import { ServerContext } from "./context.js";
 import {
@@ -82,28 +80,6 @@ async function main(config?: GodotServerConfig) {
     }
   }
 
-  const server = new Server(
-    { name: "godot-mcp", version: "0.1.0" },
-    { capabilities: { tools: {} } },
-  );
-
-  server.onerror = (error) => console.error("[MCP Error]", error);
-
-  setupToolHandlers(server, ctx);
-
-  // Cleanup on exit
-  process.on("SIGINT", () => {
-    logDebug(ctx.debugMode, "Cleaning up resources");
-    if (ctx.activeProcess) {
-      logDebug(ctx.debugMode, "Killing active Godot process");
-      ctx.activeProcess.process.kill();
-      ctx.activeProcess = null;
-    }
-    void server.close().then(() => {
-      process.exit(0);
-    });
-  });
-
   // Detect Godot path and start
   await detectGodotPath(ctx);
 
@@ -139,9 +115,45 @@ async function main(config?: GodotServerConfig) {
 
   console.error(`[SERVER] Using Godot at: ${ctx.godotPath}`);
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Godot MCP server running on stdio");
+  // Serve over stdio. The factory pattern is the 2026-07-28 stateless core:
+  // modern clients skip the initialize handshake and carry their identity in
+  // each request's _meta envelope; 2025-era clients still get the legacy
+  // handshake from the same factory.
+  const handle = serveStdio(
+    () => {
+      const server = new Server(
+        { name: "godot-mcp", version: "0.1.0" },
+        {
+          capabilities: { tools: {} },
+          // The tool list is fixed for the process lifetime, so 2026-era
+          // clients may cache tools/list instead of re-fetching it.
+          cacheHints: {
+            "tools/list": { ttlMs: 3_600_000, cacheScope: "private" },
+          },
+        },
+      );
+      setupToolHandlers(server, ctx);
+      return server;
+    },
+    { onerror: (error) => console.error("[MCP Error]", error) },
+  );
+
+  // Cleanup on exit
+  process.on("SIGINT", () => {
+    logDebug(ctx.debugMode, "Cleaning up resources");
+    if (ctx.activeProcess) {
+      logDebug(ctx.debugMode, "Killing active Godot process");
+      ctx.activeProcess.process.kill();
+      ctx.activeProcess = null;
+    }
+    void handle.close().then(() => {
+      process.exit(0);
+    });
+  });
+
+  console.error(
+    "Godot MCP server running on stdio (MCP 2026-07-28, stateless)",
+  );
 }
 
 main().catch((error: unknown) => {

@@ -49,6 +49,8 @@ You (natural language) --> AI Assistant --> MCP Server --> Godot Engine
 
 You talk to your AI assistant normally. When it needs to do something in Godot, it calls one of the 75 tools this server provides. **You don't write any code yourself** -- the AI handles that.
 
+The server is built on MCP SDK v2 and speaks the **stateless `2026-07-28` protocol revision**: modern clients call tools directly with no `initialize` handshake, and the tool list ships cache hints so clients don't re-fetch it. Older 2025-era clients still work -- the server auto-detects the client's protocol era per connection and serves the legacy handshake when needed.
+
 ## Quickstart
 
 ### Prerequisites
@@ -59,8 +61,8 @@ Before you start, make sure you have these installed:
    - Windows: e.g., `C:/Program Files (x86)/Godot/Godot_v4.7-stable_win64.exe`
    - macOS: e.g., `/Applications/Godot.app/Contents/MacOS/Godot`
    - Linux: e.g., `/usr/local/bin/godot4`
-2. **Node.js 18+** -- [Download here](https://nodejs.org/). This runs the MCP server.
-3. **pnpm** -- Install with `npm install -g pnpm` (or `corepack enable` if using Node 18+).
+2. **Node.js 20+** -- [Download here](https://nodejs.org/). This runs the MCP server.
+3. **pnpm** -- Install with `npm install -g pnpm` (or `corepack enable`).
 4. **An MCP-compatible AI assistant** -- See [Supported Clients](#supported-clients) below.
 
 ### Step 1: Clone and Build
